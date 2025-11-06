@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Positioning Map - Mid-Size Pickups</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .map-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1;
+            background: #f8f9fa;
+            border: 3px solid #dee2e6;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+
+        .axis-line {
+            position: absolute;
+            background: #adb5bd;
+        }
+
+        .axis-line.horizontal {
+            width: 100%;
+            height: 2px;
+            top: 50%;
+            left: 0;
+            transform: translateY(-1px);
+        }
+
+        .axis-line.vertical {
+            width: 2px;
+            height: 100%;
+            left: 50%;
+            top: 0;
+            transform: translateX(-1px);
+        }
+
+        .axis-label {
+            position: absolute;
+            font-weight: 600;
+            color: #495057;
+            font-size: 14px;
+            background: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .axis-label.top {
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .axis-label.bottom {
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .axis-label.left {
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .axis-label.right {
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .truck-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+            min-height: 80px;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 8px;
+        }
+
+        .truck {
+            padding: 10px 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 8px;
+            cursor: move;
+            font-weight: 600;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: transform 0.2s, box-shadow 0.2s;
+            user-select: none;
+            font-size: 14px;
+        }
+
+        .truck:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+
+        .truck.dragging {
+            opacity: 0.5;
+        }
+
+        .truck.on-map {
+            position: absolute;
+            transform: translate(-50%, -50%);
+        }
+
+        .instructions {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #856404;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .button-container {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .reset-btn {
+            background: #dc3545;
+            color: white;
+        }
+
+        .reset-btn:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .add-btn {
+            background: #28a745;
+            color: white;
+        }
+
+        .add-btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .submit-btn {
+            background: #007bff;
+            color: white;
+        }
+
+        .submit-btn:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .response-output {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e7f3ff;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            display: none;
+            word-wrap: break-word;
+        }
+
+        .response-output.show {
+            display: block;
+        }
+
+        .response-output textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            margin-top: 10px;
+            resize: vertical;
+        }
+
+        .copy-btn {
+            background: #6c757d;
+            color: white;
+            padding: 8px 16px;
+            margin-top: 10px;
+        }
+
+        .copy-btn:hover {
+            background: #5a6268;
+        }
+
+        .success-message {
+            color: #28a745;
+            font-weight: 600;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+            
+            .axis-label {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚙 Mid-Size Pickup Positioning Map</h1>
+        <p class="subtitle">Drag and drop trucks onto the map to position them</p>
+        
+        <div class="instructions">
+            💡 <strong>Tip:</strong> Drag trucks from the box below onto the map. Position them based on Efficiency vs Performance (horizontal) and Conventional vs Distinctive (vertical).
+        </div>
+
+        <div class="truck-items" id="truckBank">
+            <div class="truck" draggable="true" data-model="Ford Ranger">Ford Ranger</div>
+            <div class="truck" draggable="true" data-model="Toyota Tacoma">Toyota Tacoma</div>
+            <div class="truck" draggable="true" data-model="Chevy Colorado">Chevy Colorado</div>
+            <div class="truck" draggable="true" data-model="Nissan Frontier">Nissan Frontier</div>
+            <div class="truck" draggable="true" data-model="Honda Ridgeline">Honda Ridgeline</div>
+            <div class="truck" draggable="true" data-model="Jeep Gladiator">Jeep Gladiator</div>
+        </div>
+
+        <div class="map-container" id="map">
+            <div class="axis-line horizontal"></div>
+            <div class="axis-line vertical"></div>
+            <div class="axis-label top">Distinctive</div>
+            <div class="axis-label bottom">Conventional</div>
+            <div class="axis-label left">Efficiency</div>
+            <div class="axis-label right">Performance</div>
+        </div>
+
+        <div class="button-container">
+            <button class="add-btn" onclick="addCustomTruck()">➕ Add Custom Truck</button>
+            <button class="submit-btn" onclick="submitPositions()">📊 Submit Positions</button>
+            <button class="reset-btn" onclick="resetMap()">🔄 Reset All</button>
+        </div>
+
+        <div class="response-output" id="responseOutput">
+            <strong>📋 Copy this response data:</strong>
+            <p style="font-size: 12px; color: #666; margin: 5px 0;">Copy the text below and paste it into your survey response field</p>
+            <textarea id="responseData" readonly></textarea>
+            <button class="copy-btn" onclick="copyToClipboard()">📋 Copy to Clipboard</button>
+            <div class="success-message" id="successMessage">✅ Copied to clipboard!</div>
+        </div>
+    </div>
+
+    <script>
+        let draggedElement = null;
+        let offsetX = 0;
+        let offsetY = 0;
+
+        function initDragAndDrop() {
+            document.addEventListener('dragstart', handleDragStart);
+            document.addEventListener('dragend', handleDragEnd);
+            
+            const map = document.getElementById('map');
+            map.addEventListener('dragover', handleDragOver);
+            map.addEventListener('drop', handleDrop);
+
+            const truckBank = document.getElementById('truckBank');
+            truckBank.addEventListener('dragover', handleDragOver);
+            truckBank.addEventListener('drop', handleDropToBank);
+        }
+
+        function handleDragStart(e) {
+            if (e.target.classList.contains('truck')) {
+                draggedElement = e.target;
+                draggedElement.classList.add('dragging');
+                
+                if (draggedElement.classList.contains('on-map')) {
+                    const rect = draggedElement.getBoundingClientRect();
+                    offsetX = e.clientX - rect.left - rect.width / 2;
+                    offsetY = e.clientY - rect.top - rect.height / 2;
+                }
+                
+                e.dataTransfer.effectAllowed = 'move';
+            }
+        }
+
+        function handleDragEnd(e) {
+            if (draggedElement) {
+                draggedElement.classList.remove('dragging');
+                draggedElement = null;
+            }
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            
+            if (!draggedElement) return;
+
+            const map = document.getElementById('map');
+            const mapRect = map.getBoundingClientRect();
+            
+            const x = e.clientX - mapRect.left - offsetX;
+            const y = e.clientY - mapRect.top - offsetY;
+            
+            const percentX = (x / mapRect.width) * 100;
+            const percentY = (y / mapRect.height) * 100;
+            
+            if (percentX >= 0 && percentX <= 100 && percentY >= 0 && percentY <= 100) {
+                draggedElement.classList.add('on-map');
+                draggedElement.style.left = percentX + '%';
+                draggedElement.style.top = percentY + '%';
+                
+                if (draggedElement.parentNode !== map) {
+                    map.appendChild(draggedElement);
+                }
+            }
+            
+            offsetX = 0;
+            offsetY = 0;
+        }
+
+        function handleDropToBank(e) {
+            e.preventDefault();
+            
+            if (!draggedElement) return;
+            
+            const truckBank = document.getElementById('truckBank');
+            
+            draggedElement.classList.remove('on-map');
+            draggedElement.style.left = '';
+            draggedElement.style.top = '';
+            
+            if (draggedElement.parentNode !== truckBank) {
+                truckBank.appendChild(draggedElement);
+            }
+        }
+
+        function resetMap() {
+            const map = document.getElementById('map');
+            const truckBank = document.getElementById('truckBank');
+            const trucksOnMap = map.querySelectorAll('.truck');
+            
+            trucksOnMap.forEach(truck => {
+                truck.classList.remove('on-map');
+                truck.style.left = '';
+                truck.style.top = '';
+                truckBank.appendChild(truck);
+            });
+        }
+
+        function addCustomTruck() {
+            const name = prompt('Enter truck model name:');
+            if (name && name.trim()) {
+                const truckBank = document.getElementById('truckBank');
+                const newTruck = document.createElement('div');
+                newTruck.className = 'truck';
+                newTruck.draggable = true;
+                newTruck.setAttribute('data-model', name.trim());
+                newTruck.textContent = name.trim();
+                truckBank.appendChild(newTruck);
+            }
+        }
+
+        function submitPositions() {
+            const map = document.getElementById('map');
+            const trucksOnMap = map.querySelectorAll('.truck');
+            
+            if (trucksOnMap.length === 0) {
+                alert('Please position at least one truck on the map before submitting!');
+                return;
+            }
+
+            const positions = [];
+            const mapRect = map.getBoundingClientRect();
+            
+            trucksOnMap.forEach(truck => {
+                const model = truck.getAttribute('data-model') || truck.textContent;
+                const left = parseFloat(truck.style.left);
+                const top = parseFloat(truck.style.top);
+                
+                // Convert to axis values (-100 to 100 for each axis)
+                const efficiency_performance = ((left - 50) * 2).toFixed(1); // -100 (Efficiency) to 100 (Performance)
+                const conventional_distinctive = ((50 - top) * 2).toFixed(1); // -100 (Conventional) to 100 (Distinctive)
+                
+                positions.push({
+                    model: model,
+                    efficiency_performance: parseFloat(efficiency_performance),
+                    conventional_distinctive: parseFloat(conventional_distinctive),
+                    raw_x: left.toFixed(1),
+                    raw_y: top.toFixed(1)
+                });
+            });
+
+            // Create formatted response
+            const responseData = {
+                timestamp: new Date().toISOString(),
+                positions: positions
+            };
+
+            // Display in textarea
+            const responseOutput = document.getElementById('responseOutput');
+            const responseDataTextarea = document.getElementById('responseData');
+            responseDataTextarea.value = JSON.stringify(responseData, null, 2);
+            responseOutput.classList.add('show');
+            
+            // Scroll to response
+            responseOutput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function copyToClipboard() {
+            const responseDataTextarea = document.getElementById('responseData');
+            responseDataTextarea.select();
+            responseDataTextarea.setSelectionRange(0, 99999); // For mobile devices
+            
+            navigator.clipboard.writeText(responseDataTextarea.value).then(() => {
+                const successMessage = document.getElementById('successMessage');
+                successMessage.classList.add('show');
+                setTimeout(() => {
+                    successMessage.classList.remove('show');
+                }, 3000);
+            }).catch(err => {
+                // Fallback for older browsers
+                document.execCommand('copy');
+                const successMessage = document.getElementById('successMessage');
+                successMessage.classList.add('show');
+                setTimeout(() => {
+                    successMessage.classList.remove('show');
+                }, 3000);
+            });
+        }
+
+        initDragAndDrop();
+    </script>
+</body>
+</html>
